@@ -11,7 +11,19 @@ export class BinanceService extends BaseExchengeService {
   constructor() {
     super(ExchangeName.Binance);
 
-    this.baseLink = 'https://www.binance.com/bapi';
+    this.baseLink = 'https://api.binance.com';
+  }
+
+  async getPrice(input: CryptoCurrency) {
+    const baseCurrency = CryptoCurrency.USDT;
+
+    if (input === baseCurrency) {
+      return 1;
+    }
+
+    const res = await axios.get(`${this.baseLink}/api/v3/depth?symbol=${input}${baseCurrency}&limit=1`);
+
+    return Number(res.data.asks[0][0]);
   }
 
   async execute(input: CryptoCurrency, output: CryptoCurrency, amount: number): Promise<number> {
@@ -19,15 +31,10 @@ export class BinanceService extends BaseExchengeService {
       return 1;
     }
 
-    const res = await axios.post(`${this.baseLink}/margin/v2/public/new-otc/get-quote`, {
-      allowBlock: '1',
-      fromCoin: input,
-      requestAmount: amount,
-      requestCoin: input,
-      toCoin: output,
-      walletType: 'SPOT',
-    });
+    const inputPrice = await this.getPrice(input);
 
-    return Number(res.data.data.quotePrice) * amount;
+    const outputPrice = await this.getPrice(output);
+
+    return (inputPrice / outputPrice) * amount;
   }
 }

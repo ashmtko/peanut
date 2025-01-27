@@ -28,7 +28,7 @@ export class RaydiumAmmService extends BaseExchengeService {
   }
 
   async onModuleInit() {
-    console.info('retrieving additional info for Raydium AMM service...');
+    console.info(`[${this.name}]: retrieving additional info...`);
 
     const data = Object.entries(tokens[this.network]);
 
@@ -105,6 +105,8 @@ export class RaydiumAmmService extends BaseExchengeService {
         }
       }
     }
+
+    console.info(`[${this.name}]: done✅`);
   }
 
   async execute(input: CryptoCurrency, output: CryptoCurrency, amount: number): Promise<number | null> {
@@ -116,7 +118,7 @@ export class RaydiumAmmService extends BaseExchengeService {
     const quoteVault = this.vaults[output][input];
 
     if (!baseVault || !quoteVault) {
-      return null;
+      throw new Error('no vault account');
     }
 
     const publicKeys = [baseVault, quoteVault].map(item => new PublicKey(item));
@@ -131,9 +133,13 @@ export class RaydiumAmmService extends BaseExchengeService {
     });
 
     if (!reserve0 || !reserve1) {
-      return null;
+      throw new Error('unable to get reserves');
     }
 
-    return reserve1 / reserve0;
+    const price = reserve1 / reserve0;
+
+    const withSlipage = (price * 9975) / 10000;
+
+    return withSlipage * amount;
   }
 }

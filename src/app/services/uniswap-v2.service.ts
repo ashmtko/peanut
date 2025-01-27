@@ -46,7 +46,7 @@ export class UniswapV2Service extends BaseExchengeService {
   }
 
   async onModuleInit() {
-    console.info('retrieving additional info for Uniswap V2 service...');
+    console.info(`[${this.name}]: retrieving additional info...`);
 
     const tokensAddresses = Object.values(tokens[this.network]);
     const tokensSymbols = Object.keys(tokens[this.network]);
@@ -129,6 +129,8 @@ export class UniswapV2Service extends BaseExchengeService {
       const tokenDecimals = erc20Iface.decodeFunctionResult('decimals', res.result)[0];
       this.decimals = { ...this.decimals, [symbol]: Number(tokenDecimals) };
     }
+
+    console.info(`[${this.name}]: done✅`);
   }
 
   async execute(input: CryptoCurrency, output: CryptoCurrency, amount: number): Promise<number | null> {
@@ -139,7 +141,7 @@ export class UniswapV2Service extends BaseExchengeService {
     const pairAddress = this.pairs[input][output];
 
     if (!pairAddress) {
-      return null;
+      throw new Error('no pair address');
     }
 
     const pairIface = new ethers.Interface(PairAbi);
@@ -184,6 +186,8 @@ export class UniswapV2Service extends BaseExchengeService {
 
     const price = adjustedReserves1 / adjustedReserves0;
 
-    return price * amount;
+    const withSlipage = (price * 997) / 1000;
+
+    return withSlipage * amount;
   }
 }
